@@ -46,23 +46,18 @@ class sql_database:
         self.c.execute(f"INSERT INTO {self.table} (FILE_NAME,TRANSCRIPT_WORD,TRANSCRIPT_CHAR,ORI_SOUND,FILTERBANK,MEAN_NORM_FILTER, FRAME_LEN, PlainOrthographicTranscription, PhoneticTranscription) \
             VALUES (?,?,?,?,?,?,?,?,?)", (FILE_NAME, get_blob(TRANSCRIPT_WORD), get_blob(TRANSCRIPT_CHAR), get_blob(ORI_SOUND), get_blob(FILTERBANK), get_blob(MEAN_NORM_FILTER),FRAME_LEN, get_blob(PlainOrthographicTranscription), get_blob(PhoneticTranscription)))
 
-    def get_data(self):
-        # get data
-        # cursor = self.c.execute(
-        #     f"SELECT ID,FILE_NAME,TRANSCRIPT_WORD,TRANSCRIPT_CHAR,ORI_SOUND,FILTERBANK,MEAN_NORM_FILTER FROM {self.table}")
+    def get_data(self,data_class,indexes):
         cursor = self.c.execute(
-            f"SELECT * FROM {self.table}")
-        for row in cursor:
-            print("ID = ", row[0])
-            print("FILE_NAME = ", row[1])
-            print("TRANSCRIPT_WORD = ", pickle.loads(row[2]))
-            print("TRANSCRIPT_CHAR = ", pickle.loads(row[3]))
-            print("ORI_SOUND = ", pickle.loads(row[4]).shape)
-            print("FILTERBANK = ", pickle.loads(row[5]).shape)
-            print("MEAN_NORM_FILTER = ", pickle.loads(row[6]).shape)
-            print("FRAME_LEN =", row[7])
-            print("PlainOrthographicTranscription =", pickle.loads(row[8]))
-            print("PhoneticTranscription =", pickle.loads(row[9]))
+            f"SELECT {','.join(data_class)} FROM {self.table} WHERE ID IN ({','.join(indexes)})")
+
+        return list(cursor)
+
+    @property
+    def size(self):
+        cursor = self.c.execute(
+            f"SELECT MAX(ID) FROM {self.table}")
+        return list(cursor)[0][0]
+
 
 
 if __name__ == "__main__":
@@ -80,9 +75,9 @@ if __name__ == "__main__":
     # 'PlainOrthographicTranscription':text,
     # 'PhoneticTranscription':PhoneticTranscription}
 
-    database = sql_database()
+    database = sql_database('test_data.db')
     count=0
-    for dataset in ['SPS','APS']:
+    for dataset in ['SPS_test','APS_test']:
 
         database.switch_table(dataset)
         database.create_table()
